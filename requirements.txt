@@ -3,5 +3,6 @@ docling-ibm-models>=3.4
 transformers>=4.49
 anthropic>=0.39
 gradio>=5.0
+huggingface_hub>=0.24,<1.0
 pandas>=2.0
 pillow>=10.0
