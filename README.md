@@ -8,6 +8,7 @@ sdk_version: 4.40.0
 app_file: app.py
 pinned: false
 license: mit
+python_version: "3.12"
 ---
 
 # Scientific Figure & Table Miner
