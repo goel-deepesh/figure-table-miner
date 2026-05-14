@@ -2,6 +2,6 @@ docling>=2.40
 docling-ibm-models>=3.4
 transformers>=4.49
 anthropic>=0.39
-gradio>=4.40
+gradio>=5.0
 pandas>=2.0
 pillow>=10.0
