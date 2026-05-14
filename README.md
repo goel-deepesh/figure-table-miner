@@ -1,3 +1,15 @@
+---
+title: Figure & Table Miner
+emoji: 📊
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.40.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
 # Scientific Figure & Table Miner
 
 Takes any scientific PDF, gives you back its figures, tables, the body-text
