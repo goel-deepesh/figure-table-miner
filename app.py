@@ -17,20 +17,6 @@ import os
 import tempfile
 from dataclasses import asdict
 
-import gradio_client.utils as _gcu
-
-_orig_json_schema_to_python_type = _gcu._json_schema_to_python_type
-
-def _safe_json_schema_to_python_type(schema, defs=None):
-    if isinstance(schema, bool):
-        return "Any"
-    try:
-        return _orig_json_schema_to_python_type(schema, defs)
-    except Exception:
-        return "Any"
-
-_gcu._json_schema_to_python_type = _safe_json_schema_to_python_type
-
 import gradio as gr
 
 from miner import mine_pdf
@@ -132,7 +118,10 @@ def process(pdf_file, api_key, do_summarize, model_choice):
     yield status, gallery, tables_md, payload_str, tmp.name
 
 
-with gr.Blocks(title="Scientific Figure & Table Miner") as demo:
+with gr.Blocks(
+    title="Scientific Figure & Table Miner",
+    theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
+) as demo:
     gr.Markdown(
         "# Scientific Figure & Table Miner\n"
         "Upload any scientific PDF. The tool extracts figures, tables, the "
@@ -160,7 +149,13 @@ with gr.Blocks(title="Scientific Figure & Table Miner") as demo:
         with gr.Column(scale=2):
             with gr.Tabs():
                 with gr.TabItem("Figures"):
-                    gallery = gr.Gallery(label="Extracted figures", columns=2, height=600)
+                    gallery = gr.Gallery(
+                        label="Extracted figures",
+                        columns=2,
+                        object_fit="contain",
+                        allow_preview=True,
+                        show_label=True,
+                    )
                 with gr.TabItem("Tables"):
                     tables_view = gr.Markdown()
                 with gr.TabItem("Full JSON"):

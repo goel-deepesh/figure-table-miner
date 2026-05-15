@@ -116,11 +116,11 @@ def mine_pdf(pdf_path: str, images_scale: float = 2.0) -> dict:
 
         elif isinstance(element, TableItem):
             try:
-                md = element.export_to_markdown()
+                md = element.export_to_markdown(doc)
             except Exception:
                 md = ""
             try:
-                df = element.export_to_dataframe()
+                df = element.export_to_dataframe(doc)
             except Exception:
                 df = None
             caption = (element.caption_text(doc) or "").strip()
