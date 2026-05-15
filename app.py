@@ -137,6 +137,7 @@ def process(pdf_file, api_key, do_summarize, model_choice):
 with gr.Blocks(
     title="Scientific Figure & Table Miner",
     theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
+    js="() => { document.querySelector('body').classList.remove('dark'); }",
 ) as demo:
     gr.Markdown(
         "# Scientific Figure & Table Miner\n"
