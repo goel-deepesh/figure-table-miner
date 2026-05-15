@@ -12,10 +12,29 @@ Deploy to Hugging Face Spaces:
 
 from __future__ import annotations
 
+# ---------------------------------------------------------------------------
+# Compatibility patch: Gradio 5 + huggingface_hub on HF Spaces sometimes
+# trips a schema-walker bug where bool schemas (valid JSON Schema for "any")
+# are passed where dicts are expected, breaking the /api/info endpoint and
+# making the frontend show "No API found" on every click. Patch the private
+# recursive function to skip bool inputs.
+# Must run BEFORE `import gradio`.
+# ---------------------------------------------------------------------------
+import gradio_client.utils as _gcu
+_orig_json_schema_to_python_type = _gcu._json_schema_to_python_type
+def _safe_json_schema_to_python_type(schema, defs=None):
+    if isinstance(schema, bool):
+        return "Any"
+    try:
+        return _orig_json_schema_to_python_type(schema, defs)
+    except Exception:
+        return "Any"
+_gcu._json_schema_to_python_type = _safe_json_schema_to_python_type
+# ---------------------------------------------------------------------------
+
 import json
 import os
 import tempfile
-from dataclasses import asdict
 
 import gradio as gr
 
@@ -122,7 +141,6 @@ def process(pdf_file, api_key, do_summarize, model_choice):
     except Exception as e:
         import traceback
         tb = traceback.format_exc()
-        # Keep the last ~15 lines of traceback — enough to identify the failing call
         tail = "\n".join(tb.splitlines()[-15:])
         msg = (
             f"❌ Pipeline failed: {type(e).__name__}: {e}\n\n"
@@ -134,33 +152,7 @@ def process(pdf_file, api_key, do_summarize, model_choice):
         yield msg, [], "", "", None
 
 
-DARK_OVERRIDE_CSS = """
-.dark, .dark * {
-    --body-background-fill: #ffffff !important;
-    --background-fill-primary: #ffffff !important;
-    --background-fill-secondary: #f8f9fa !important;
-    --block-background-fill: #ffffff !important;
-    --body-text-color: #1f2937 !important;
-    --body-text-color-subdued: #4b5563 !important;
-    --block-label-text-color: #1f2937 !important;
-    --block-title-text-color: #1f2937 !important;
-    --border-color-primary: #d1d5db !important;
-}
-.dark body, .dark .gradio-container {
-    background-color: #ffffff !important;
-    color: #1f2937 !important;
-}
-.dark .markdown, .dark .prose, .dark h1, .dark h2, .dark h3,
-.dark p, .dark label, .dark span {
-    color: #1f2937 !important;
-}
-"""
-
-with gr.Blocks(
-    title="Scientific Figure & Table Miner",
-    theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
-    css=DARK_OVERRIDE_CSS,
-) as demo:
+with gr.Blocks(title="Scientific Figure & Table Miner") as demo:
     gr.Markdown(
         "# Scientific Figure & Table Miner\n"
         "Upload any scientific PDF. The tool extracts figures, tables, the "
