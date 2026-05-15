@@ -49,73 +49,89 @@ def _table_to_json(tab) -> dict:
 
 def process(pdf_file, api_key, do_summarize, model_choice):
     if pdf_file is None:
-        return "Upload a PDF first.", [], "", "", None
+        yield "Upload a PDF first.", [], "", "", None
+        return
 
-    yield "Step 1/3 — Parsing PDF (this is the slow part on first run; docling downloads models)...", [], "", "", None
+    try:
+        yield "Step 1/3 — Parsing PDF (this is the slow part on first run; docling downloads models)...", [], "", "", None
 
-    pdf_path = pdf_file.name if hasattr(pdf_file, "name") else pdf_file
-    extracted = mine_pdf(pdf_path)
-    figures = extracted["figures"]
-    tables = extracted["tables"]
+        pdf_path = pdf_file.name if hasattr(pdf_file, "name") else pdf_file
+        extracted = mine_pdf(pdf_path)
+        figures = extracted["figures"]
+        tables = extracted["tables"]
 
-    yield f"Step 2/3 — Linking discussion text ({len(figures)} figures, {len(tables)} tables found)...", [], "", "", None
+        yield f"Step 2/3 — Linking discussion text ({len(figures)} figures, {len(tables)} tables found)...", [], "", "", None
 
-    link_context(extracted["text"], figures, tables)
+        link_context(extracted["text"], figures, tables)
 
-    if do_summarize:
-        if not (api_key or os.environ.get("ANTHROPIC_API_KEY")):
-            yield "ERROR: Summarization is on but no API key was provided. Paste a key or uncheck the box.", [], "", "", None
-            return
-        yield f"Step 3/3 — Summarizing {len(figures) + len(tables)} items with {model_choice}...", [], "", "", None
-        summarize_all(figures, tables, api_key=api_key or None, model=model_choice)
+        if do_summarize:
+            if not (api_key or os.environ.get("ANTHROPIC_API_KEY")):
+                yield "ERROR: Summarization is on but no API key was provided. Paste a key or uncheck the box.", [], "", "", None
+                return
+            yield f"Step 3/3 — Summarizing {len(figures) + len(tables)} items with {model_choice}...", [], "", "", None
+            summarize_all(figures, tables, api_key=api_key or None, model=model_choice)
 
-    # Build the figure gallery
-    gallery = []
-    for fig in figures:
-        label_bits = []
-        if fig.number is not None:
-            label_bits.append(f"Fig {fig.number}")
-        else:
-            label_bits.append(f"Fig (idx {fig.index})")
-        if fig.page is not None:
-            label_bits.append(f"p.{fig.page}")
-        caption_snip = (fig.caption[:90] + "…") if len(fig.caption) > 90 else fig.caption
-        label = " · ".join(label_bits) + ((" — " + caption_snip) if caption_snip else "")
-        gallery.append((fig.image, label))
+        # Build the figure gallery
+        gallery = []
+        for fig in figures:
+            label_bits = []
+            if fig.number is not None:
+                label_bits.append(f"Fig {fig.number}")
+            else:
+                label_bits.append(f"Fig (idx {fig.index})")
+            if fig.page is not None:
+                label_bits.append(f"p.{fig.page}")
+            caption_snip = (fig.caption[:90] + "…") if len(fig.caption) > 90 else fig.caption
+            label = " · ".join(label_bits) + ((" — " + caption_snip) if caption_snip else "")
+            gallery.append((fig.image, label))
 
-    # Build the table rendering (markdown of each table with its summary)
-    table_md_chunks = []
-    for tab in tables:
-        chunk = []
-        head = f"### Table {tab.number if tab.number is not None else tab.index}"
-        if tab.page is not None:
-            head += f" (page {tab.page})"
-        chunk.append(head)
-        if tab.caption:
-            chunk.append(f"**Caption:** {tab.caption}")
-        if tab.summary:
-            chunk.append("**Summary:**")
-            chunk.append("```json\n" + json.dumps(tab.summary, indent=2) + "\n```")
-        chunk.append(tab.markdown or "_(could not render table)_")
-        table_md_chunks.append("\n\n".join(chunk))
-    tables_md = "\n\n---\n\n".join(table_md_chunks) if table_md_chunks else "_No tables detected._"
+        # Build the table rendering (markdown of each table with its summary)
+        table_md_chunks = []
+        for tab in tables:
+            chunk = []
+            head = f"### Table {tab.number if tab.number is not None else tab.index}"
+            if tab.page is not None:
+                head += f" (page {tab.page})"
+            chunk.append(head)
+            if tab.caption:
+                chunk.append(f"**Caption:** {tab.caption}")
+            if tab.summary:
+                chunk.append("**Summary:**")
+                chunk.append("```json\n" + json.dumps(tab.summary, indent=2) + "\n```")
+            chunk.append(tab.markdown or "_(could not render table)_")
+            table_md_chunks.append("\n\n".join(chunk))
+        tables_md = "\n\n---\n\n".join(table_md_chunks) if table_md_chunks else "_No tables detected._"
 
-    # Build the full JSON output
-    payload = {
-        "figures": [_figure_to_json(f) for f in figures],
-        "tables": [_table_to_json(t) for t in tables],
-    }
-    payload_str = json.dumps(payload, indent=2, default=str)
+        # Build the full JSON output
+        payload = {
+            "figures": [_figure_to_json(f) for f in figures],
+            "tables": [_table_to_json(t) for t in tables],
+        }
+        payload_str = json.dumps(payload, indent=2, default=str)
 
-    # Write JSON to a temp file so the user can download it
-    tmp = tempfile.NamedTemporaryFile(
-        mode="w", suffix=".json", delete=False, prefix="mined_"
-    )
-    tmp.write(payload_str)
-    tmp.close()
+        # Write JSON to a temp file so the user can download it
+        tmp = tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False, prefix="mined_"
+        )
+        tmp.write(payload_str)
+        tmp.close()
 
-    status = f"Done. Extracted {len(figures)} figures and {len(tables)} tables."
-    yield status, gallery, tables_md, payload_str, tmp.name
+        status = f"Done. Extracted {len(figures)} figures and {len(tables)} tables."
+        yield status, gallery, tables_md, payload_str, tmp.name
+
+    except Exception as e:
+        import traceback
+        tb = traceback.format_exc()
+        # Keep the last ~15 lines of traceback — enough to identify the failing call
+        tail = "\n".join(tb.splitlines()[-15:])
+        msg = (
+            f"❌ Pipeline failed: {type(e).__name__}: {e}\n\n"
+            f"--- Traceback (last frames) ---\n{tail}\n\n"
+            f"If this is reproducible on a specific PDF, the PDF likely has an "
+            f"unusual structure (scanned without OCR, encrypted, corrupt fonts, "
+            f"or extremely large). Try opening it in a PDF reader to check."
+        )
+        yield msg, [], "", "", None
 
 
 with gr.Blocks(
