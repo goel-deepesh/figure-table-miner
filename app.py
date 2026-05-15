@@ -19,6 +19,14 @@ from dataclasses import asdict
 
 import gradio as gr
 
+import gradio_client.utils as _gcu
+_orig_get_type = _gcu.get_type
+def _safe_get_type(schema):
+    if not isinstance(schema, dict):
+        return "Any"
+    return _orig_get_type(schema)
+_gcu.get_type = _safe_get_type
+
 from miner import mine_pdf
 from linker import link_context
 from summarizer import summarize_all
