@@ -17,15 +17,21 @@ import os
 import tempfile
 from dataclasses import asdict
 
-import gradio as gr
-
 import gradio_client.utils as _gcu
-_orig_get_type = _gcu.get_type
-def _safe_get_type(schema):
-    if not isinstance(schema, dict):
+
+_orig_json_schema_to_python_type = _gcu._json_schema_to_python_type
+
+def _safe_json_schema_to_python_type(schema, defs=None):
+    if isinstance(schema, bool):
         return "Any"
-    return _orig_get_type(schema)
-_gcu.get_type = _safe_get_type
+    try:
+        return _orig_json_schema_to_python_type(schema, defs)
+    except Exception:
+        return "Any"
+
+_gcu._json_schema_to_python_type = _safe_json_schema_to_python_type
+
+import gradio as gr
 
 from miner import mine_pdf
 from linker import link_context
