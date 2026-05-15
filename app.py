@@ -134,18 +134,32 @@ def process(pdf_file, api_key, do_summarize, model_choice):
         yield msg, [], "", "", None
 
 
+DARK_OVERRIDE_CSS = """
+.dark, .dark * {
+    --body-background-fill: #ffffff !important;
+    --background-fill-primary: #ffffff !important;
+    --background-fill-secondary: #f8f9fa !important;
+    --block-background-fill: #ffffff !important;
+    --body-text-color: #1f2937 !important;
+    --body-text-color-subdued: #4b5563 !important;
+    --block-label-text-color: #1f2937 !important;
+    --block-title-text-color: #1f2937 !important;
+    --border-color-primary: #d1d5db !important;
+}
+.dark body, .dark .gradio-container {
+    background-color: #ffffff !important;
+    color: #1f2937 !important;
+}
+.dark .markdown, .dark .prose, .dark h1, .dark h2, .dark h3,
+.dark p, .dark label, .dark span {
+    color: #1f2937 !important;
+}
+"""
+
 with gr.Blocks(
     title="Scientific Figure & Table Miner",
     theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
-    js="""
-    () => {
-        const url = new URL(window.location);
-        if (url.searchParams.get('__theme') !== 'light') {
-            url.searchParams.set('__theme', 'light');
-            window.location.href = url.href;
-        }
-    }
-    """,
+    css=DARK_OVERRIDE_CSS,
 ) as demo:
     gr.Markdown(
         "# Scientific Figure & Table Miner\n"
