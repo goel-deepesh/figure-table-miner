@@ -61,6 +61,24 @@ recognize this architecture`.
 
 ---
 
+## 2026-05-15 — v0.2 — first deployment + evaluation
+
+**Deployment:**
+- Live on Hugging Face Spaces: https://huggingface.co/spaces/deepesh-goel/figure-table-miner
+- Pinned `gradio_sdk_version: 5.29.0` in README YAML to fix dark-mode rendering bug (5.0.0 default had broken theme switching)
+- Pinned `huggingface_hub<1.0` to fix `HfFolder` import error
+- Patched `gradio_client.utils._json_schema_to_python_type` to skip bool schemas (HF Spaces "No API found" bug)
+- Wrapped pipeline in try/except so backend errors surface in the Status box instead of generic "Error"
+
+**Evaluation:**
+- Tested on 5 papers spanning ML, ACM/SIGKDD, Elsevier medical, and ICCF/LENR proceedings (55 pages, 27 figures, 16 tables ground truth)
+- Tables: 16/16 detected (perfect across all five papers)
+- Figures: 28 detected vs 27 ground truth, but heterogeneous — 3 papers near-perfect, 1 over-detected (P1: nested example figures inside a meta paper), 1 under-detected (P4: six panel figures merged into one composite)
+- Caption number parsing succeeded 16/28 figures, 14/16 tables; failures concentrate in P1 and P4
+- Discussion-paragraph linking attached context to 22/28 figures, 13/16 tables; ~100% when caption number parsed
+- All summaries populated successfully; no LLM errors after Anthropic credits topped up
+- Added two limitations to the report: "Nested figures (meta-content)" from P1, expanded "Multi-panel figures" with P4 as concrete case
+
 ## (next entry goes here)
 
 <!--
@@ -70,7 +88,7 @@ Template for new entries:
 
 **Goal / Bug:**
 
-**What I tried:**
+**What was tried:**
 
 **What worked / didn't:**
 
