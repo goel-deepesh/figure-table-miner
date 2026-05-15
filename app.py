@@ -190,7 +190,12 @@ with gr.Blocks(title="Scientific Figure & Table Miner") as demo:
                 with gr.TabItem("Tables"):
                     tables_view = gr.Markdown()
                 with gr.TabItem("Full JSON"):
-                    json_view = gr.Code(language="json", label="Structured output")
+                    json_view = gr.Textbox(
+                        label="Structured output",
+                        lines=25,
+                        max_lines=50,
+                        show_copy_button=True,
+                    )
                     json_download = gr.File(label="Download JSON", interactive=False)
 
     run_btn.click(
