@@ -137,7 +137,15 @@ def process(pdf_file, api_key, do_summarize, model_choice):
 with gr.Blocks(
     title="Scientific Figure & Table Miner",
     theme=gr.themes.Soft(primary_hue="indigo", neutral_hue="slate"),
-    js="() => { document.querySelector('body').classList.remove('dark'); }",
+    js="""
+    () => {
+        const url = new URL(window.location);
+        if (url.searchParams.get('__theme') !== 'light') {
+            url.searchParams.set('__theme', 'light');
+            window.location.href = url.href;
+        }
+    }
+    """,
 ) as demo:
     gr.Markdown(
         "# Scientific Figure & Table Miner\n"
